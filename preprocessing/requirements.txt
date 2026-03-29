@@ -1,0 +1,6 @@
+requests
+beautifulsoup4
+pydub
+essentia-tensorflow
+laion-clap
+tqdm
