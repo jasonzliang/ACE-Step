@@ -3,13 +3,14 @@ Step 3: Generate trance-specific prompt tags for each MP3 chunk.
 Uses Essentia for BPM/key + CLAP for zero-shot trance-specific tagging.
 
 Usage:
-    python preprocessing/03_generate_prompts.py --input_dir ./data/psytrance/chunked_mp3
+    python preprocessing/03_generate_prompts.py --input_dir ./data/psytrance/chunked_mp3 --workers 8
 """
 
 import argparse
 import os
 import warnings
 from pathlib import Path
+from multiprocessing import Pool
 
 import numpy as np
 from tqdm import tqdm
@@ -86,8 +87,9 @@ def load_clap():
     return model
 
 
-def analyze_essentia(mp3_path, es):
-    """Extract BPM and key using Essentia."""
+def _analyze_essentia_single(mp3_path):
+    """Worker function for parallel Essentia analysis."""
+    import essentia.standard as es
     tags = []
     try:
         audio = es.MonoLoader(filename=mp3_path, sampleRate=44100)()
@@ -108,7 +110,28 @@ def analyze_essentia(mp3_path, es):
     except Exception as e:
         print(f"  [WARN] Essentia failed on {mp3_path}: {e}")
 
-    return tags
+    return mp3_path, tags
+
+
+def analyze_essentia_parallel(mp3_paths, workers=1):
+    """Extract BPM and key using Essentia, optionally in parallel."""
+    results = {}
+
+    if workers <= 1:
+        es = load_essentia()
+        for mp3_path in tqdm(mp3_paths, desc="Essentia"):
+            _, tags = _analyze_essentia_single(mp3_path)
+            results[mp3_path] = tags
+    else:
+        with Pool(processes=workers) as pool:
+            for mp3_path, tags in tqdm(
+                pool.imap_unordered(_analyze_essentia_single, mp3_paths),
+                total=len(mp3_paths),
+                desc=f"Essentia ({workers}w)",
+            ):
+                results[mp3_path] = tags
+
+    return results
 
 
 def analyze_clap_batch(mp3_paths, clap_model, text_embeddings):
@@ -167,6 +190,8 @@ def main():
     parser.add_argument("--input_dir", default="./data/psytrance/chunked_mp3")
     parser.add_argument("--clap_batch_size", type=int, default=16,
                         help="Batch size for CLAP inference")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="Number of parallel workers for Essentia analysis")
     parser.add_argument("--skip_existing", action="store_true",
                         help="Skip files that already have a _prompt.txt")
     args = parser.parse_args()
@@ -184,20 +209,16 @@ def main():
         print("No files to process.")
         return
 
-    # Load models
-    print("Loading Essentia...")
-    es = load_essentia()
+    mp3_paths = [str(f) for f in mp3_files]
 
+    # Phase 1: Essentia analysis (CPU-bound, parallelizable)
+    print("Phase 1: Essentia BPM/key analysis...")
+    essentia_tags = analyze_essentia_parallel(mp3_paths, workers=args.workers)
+
+    # Phase 2: CLAP analysis (GPU-batched, single process)
     print("Loading CLAP model...")
     clap_model = load_clap()
 
-    # Phase 1: Essentia analysis (per-file, fast)
-    print("Phase 1: Essentia BPM/key analysis...")
-    essentia_tags = {}
-    for mp3 in tqdm(mp3_files, desc="Essentia"):
-        essentia_tags[str(mp3)] = analyze_essentia(str(mp3), es)
-
-    # Phase 2: CLAP analysis (batched, GPU-accelerated)
     print("Phase 2: CLAP zero-shot tagging...")
     import torch
     # Pre-compute text embeddings once (shared across all batches)
@@ -205,7 +226,6 @@ def main():
     text_embeddings = torch.nn.functional.normalize(text_embeddings, dim=-1)
 
     clap_tags = {}
-    mp3_paths = [str(f) for f in mp3_files]
 
     for batch_start in tqdm(range(0, len(mp3_paths), args.clap_batch_size), desc="CLAP"):
         batch = mp3_paths[batch_start:batch_start + args.clap_batch_size]

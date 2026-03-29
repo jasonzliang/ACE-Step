@@ -3,7 +3,7 @@ Step 1: Scrape MP3 files from the goa_psytrance archive.
 Recursively crawls Apache directory listings and downloads MP3s.
 
 Usage:
-    python preprocessing/01_scrape.py --output_dir ./data/psytrance/raw_mp3 --max_files 500
+    python preprocessing/01_scrape.py --output_dir ./data/psytrance/raw_mp3 --max_files 500 --workers 8
 """
 
 import argparse
@@ -11,6 +11,7 @@ import os
 import time
 import re
 from urllib.parse import urljoin, unquote
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
@@ -113,34 +114,66 @@ def sanitize_filename(url, base_url):
     return name
 
 
-def download_mp3s(urls, output_dir, session, base_url):
-    """Download MP3 files to output_dir."""
+def _download_one(url, output_dir, base_url):
+    """Download a single MP3. Returns (url, success)."""
+    filename = sanitize_filename(url, base_url)
+    filepath = os.path.join(output_dir, filename)
+
+    if os.path.exists(filepath):
+        return url, True
+
+    session = requests.Session()
+    session.headers.update({"User-Agent": "ACE-Step-DataPrep/1.0"})
+    try:
+        resp = session.get(url, timeout=120, stream=True)
+        resp.raise_for_status()
+        with open(filepath, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                f.write(chunk)
+        return url, True
+    except requests.RequestException as e:
+        print(f"  [WARN] Failed to download {url}: {e}")
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        return url, False
+
+
+def download_mp3s(urls, output_dir, base_url, workers=1):
+    """Download MP3 files to output_dir with parallel workers."""
     os.makedirs(output_dir, exist_ok=True)
     downloaded = 0
 
-    for url in tqdm(urls, desc="Downloading MP3s"):
-        filename = sanitize_filename(url, base_url)
-        filepath = os.path.join(output_dir, filename)
-
-        if os.path.exists(filepath):
-            downloaded += 1
-            continue
-
-        try:
-            resp = session.get(url, timeout=120, stream=True)
-            resp.raise_for_status()
-            with open(filepath, "wb") as f:
-                for chunk in resp.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            downloaded += 1
-        except requests.RequestException as e:
-            print(f"  [WARN] Failed to download {url}: {e}")
+    if workers <= 1:
+        session = requests.Session()
+        session.headers.update({"User-Agent": "ACE-Step-DataPrep/1.0"})
+        for url in tqdm(urls, desc="Downloading MP3s"):
+            filename = sanitize_filename(url, base_url)
+            filepath = os.path.join(output_dir, filename)
             if os.path.exists(filepath):
-                os.remove(filepath)
-            continue
-
-        # Be polite
-        time.sleep(0.3)
+                downloaded += 1
+                continue
+            try:
+                resp = session.get(url, timeout=120, stream=True)
+                resp.raise_for_status()
+                with open(filepath, "wb") as f:
+                    for chunk in resp.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                downloaded += 1
+            except requests.RequestException as e:
+                print(f"  [WARN] Failed to download {url}: {e}")
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+            time.sleep(0.3)
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = {
+                executor.submit(_download_one, url, output_dir, base_url): url
+                for url in urls
+            }
+            for future in tqdm(as_completed(futures), total=len(urls), desc="Downloading MP3s"):
+                _, success = future.result()
+                if success:
+                    downloaded += 1
 
     print(f"Downloaded {downloaded}/{len(urls)} files to {output_dir}")
 
@@ -153,6 +186,8 @@ def main():
                         help="Max number of MP3s to download (None = all)")
     parser.add_argument("--max_depth", type=int, default=3,
                         help="Max directory recursion depth")
+    parser.add_argument("--workers", type=int, default=1,
+                        help="Number of parallel download workers")
     args = parser.parse_args()
 
     session = requests.Session()
@@ -168,7 +203,7 @@ def main():
     print(f"Found {len(mp3_urls)} MP3 files")
 
     if mp3_urls:
-        download_mp3s(mp3_urls, args.output_dir, session, base_url)
+        download_mp3s(mp3_urls, args.output_dir, base_url, args.workers)
 
 
 if __name__ == "__main__":

@@ -3,12 +3,12 @@
 #
 # Usage:
 #   cd /path/to/ACE-Step
-#   bash preprocessing/run_all.sh [name] [max_files]
+#   bash preprocessing/run_all.sh [name] [max_files] [workers]
 #
 # Examples:
-#   bash preprocessing/run_all.sh psytrance 500
-#   bash preprocessing/run_all.sh darkpsy 1000
-#   bash preprocessing/run_all.sh                   # defaults: psytrance, 500
+#   bash preprocessing/run_all.sh psytrance 500 8
+#   bash preprocessing/run_all.sh darkpsy 1000 4
+#   bash preprocessing/run_all.sh                       # defaults: psytrance, 500, 4
 #
 # Prerequisites:
 #   pip install -r preprocessing/requirements.txt
@@ -18,29 +18,34 @@ set -e
 
 NAME="${1:-psytrance}"
 MAX_FILES="${2:-500}"
+WORKERS="${3:-4}"
 DATA_DIR="./data/${NAME}"
 DATASET_NAME="data/${NAME}_lora_dataset"
 
 echo "============================================"
 echo "  ACE-Step Data Preprocessing: ${NAME}"
+echo "  Workers: ${WORKERS}  Max files: ${MAX_FILES}"
 echo "============================================"
 
 echo ""
-echo "[1/4] Scraping MP3s from archive (max: $MAX_FILES)..."
+echo "[1/4] Scraping MP3s from archive (max: $MAX_FILES, workers: $WORKERS)..."
 python preprocessing/01_scrape.py \
     --output_dir "${DATA_DIR}/raw_mp3" \
-    --max_files "$MAX_FILES"
+    --max_files "$MAX_FILES" \
+    --workers "$WORKERS"
 
 echo ""
-echo "[2/4] Chunking into 240s segments..."
+echo "[2/4] Chunking into 240s segments (workers: $WORKERS)..."
 python preprocessing/02_chunk.py \
     --input_dir "${DATA_DIR}/raw_mp3" \
-    --output_dir "${DATA_DIR}/chunked_mp3"
+    --output_dir "${DATA_DIR}/chunked_mp3" \
+    --workers "$WORKERS"
 
 echo ""
-echo "[3/4] Generating trance prompts (Essentia + CLAP)..."
+echo "[3/4] Generating trance prompts (Essentia + CLAP, workers: $WORKERS)..."
 python preprocessing/03_generate_prompts.py \
-    --input_dir "${DATA_DIR}/chunked_mp3"
+    --input_dir "${DATA_DIR}/chunked_mp3" \
+    --workers "$WORKERS"
 
 echo ""
 echo "[4/4] Moving to data dir and creating HF dataset..."
