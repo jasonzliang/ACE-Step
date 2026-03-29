@@ -2,7 +2,7 @@ from datasets import Dataset
 from pathlib import Path
 import os
 
-def create_dataset(data_dir="./data", repeat_count=2000, output_name="zh_lora_dataset"):
+def create_dataset(data_dir="./data/test", repeat_count=2000, output_name="data/zh_lora_dataset"):
     data_path = Path(data_dir)
     all_examples = []
 
@@ -39,9 +39,9 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser(description="Create a dataset from audio files.")
-    parser.add_argument("--data_dir", type=str, default="./data", help="Directory containing the audio files.")
+    parser.add_argument("--data_dir", type=str, default="./data/test", help="Directory containing the audio files.")
     parser.add_argument("--repeat_count", type=int, default=1, help="Number of times to repeat the dataset.")
-    parser.add_argument("--output_name", type=str, default="zh_lora_dataset", help="Name of the output dataset.")
+    parser.add_argument("--output_name", type=str, default="data/zh_lora_dataset", help="Name of the output dataset.")
     args = parser.parse_args()
 
     create_dataset(data_dir=args.data_dir, repeat_count=args.repeat_count, output_name=args.output_name)

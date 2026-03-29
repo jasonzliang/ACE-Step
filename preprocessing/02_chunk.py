@@ -3,7 +3,7 @@ Step 2: Split MP3 files into 240-second chunks.
 Skips files that are already <= 240 seconds.
 
 Usage:
-    python preprocessing/02_chunk.py --input_dir ./preprocessing/raw_mp3 --output_dir ./preprocessing/chunked_mp3
+    python preprocessing/02_chunk.py --input_dir ./data/psytrance/raw_mp3 --output_dir ./data/psytrance/chunked_mp3
 """
 
 import argparse
@@ -57,8 +57,8 @@ def chunk_mp3(input_path, output_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="Chunk MP3s into 240s segments")
-    parser.add_argument("--input_dir", default="./preprocessing/raw_mp3")
-    parser.add_argument("--output_dir", default="./preprocessing/chunked_mp3")
+    parser.add_argument("--input_dir", default="./data/psytrance/raw_mp3")
+    parser.add_argument("--output_dir", default="./data/psytrance/chunked_mp3")
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)

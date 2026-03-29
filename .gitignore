@@ -205,5 +205,9 @@ exps/*
 
 .DS_Store
 *.tmp
-preprocessing/chunked_mp3
-preprocessing/raw_mp3
+data/psytrance/raw_mp3
+data/psytrance/chunked_mp3
+data/psytrance/*.mp3
+data/psytrance/*_prompt.txt
+data/psytrance/*_lyrics.txt
+data/*_lora_dataset/

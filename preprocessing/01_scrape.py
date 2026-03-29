@@ -3,7 +3,7 @@ Step 1: Scrape MP3 files from the goa_psytrance archive.
 Recursively crawls Apache directory listings and downloads MP3s.
 
 Usage:
-    python preprocessing/01_scrape.py --output_dir ./preprocessing/raw_mp3 --max_files 500
+    python preprocessing/01_scrape.py --output_dir ./data/psytrance/raw_mp3 --max_files 500
 """
 
 import argparse
@@ -148,7 +148,7 @@ def download_mp3s(urls, output_dir, session, base_url):
 def main():
     parser = argparse.ArgumentParser(description="Scrape MP3s from goa_psytrance archive")
     parser.add_argument("--base_url", default="http://b1g-arch1ve.buho.ch/goa_psytrance/")
-    parser.add_argument("--output_dir", default="./preprocessing/raw_mp3")
+    parser.add_argument("--output_dir", default="./data/psytrance/raw_mp3")
     parser.add_argument("--max_files", type=int, default=None,
                         help="Max number of MP3s to download (None = all)")
     parser.add_argument("--max_depth", type=int, default=3,

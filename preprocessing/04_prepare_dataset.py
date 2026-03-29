@@ -4,7 +4,7 @@ and convert to HuggingFace dataset format for LoRA fine-tuning.
 
 Usage:
     python preprocessing/04_prepare_dataset.py \
-        --input_dir ./preprocessing/chunked_mp3 \
+        --input_dir ./data/psytrance/chunked_mp3 \
         --data_dir ./data \
         --repeat_count 50 \
         --output_name psytrance_lora_dataset
@@ -16,9 +16,6 @@ import shutil
 from pathlib import Path
 from tqdm import tqdm
 
-# Add parent dir to path so we can import the converter
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from convert2hf_dataset import create_dataset
 
 
@@ -26,12 +23,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Move processed files to data dir and create HF dataset"
     )
-    parser.add_argument("--input_dir", default="./preprocessing/chunked_mp3")
-    parser.add_argument("--data_dir", default="./data_psytrance",
-                        help="ACE-Step data directory for training (separate from default ./data)")
+    parser.add_argument("--input_dir", default="./data/psytrance/chunked_mp3")
+    parser.add_argument("--data_dir", default="./data/psytrance",
+                        help="ACE-Step data directory for training")
     parser.add_argument("--repeat_count", type=int, default=50,
                         help="Dataset repeat count (lower for large datasets)")
-    parser.add_argument("--output_name", default="psytrance_lora_dataset",
+    parser.add_argument("--output_name", default="data/psytrance_lora_dataset",
                         help="Output HuggingFace dataset name")
     parser.add_argument("--copy", action="store_true",
                         help="Copy files instead of moving them")
@@ -87,10 +84,10 @@ def main():
         repeat_count=args.repeat_count,
         output_name=args.output_name,
     )
-    print(f"Dataset saved to ./{args.output_name}")
+    print(f"Dataset saved to {args.output_name}")
     print(f"\nReady for training! Run:")
     print(f"  python trainer.py \\")
-    print(f"    --dataset_path ./{args.output_name} \\")
+    print(f"    --dataset_path {args.output_name} \\")
     print(f"    --exp_name psytrance_lora \\")
     print(f"    --lora_config_path config/zh_rap_lora_config.json \\")
     print(f"    --learning_rate 1e-4 \\")

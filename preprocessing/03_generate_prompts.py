@@ -3,7 +3,7 @@ Step 3: Generate trance-specific prompt tags for each MP3 chunk.
 Uses Essentia for BPM/key + CLAP for zero-shot trance-specific tagging.
 
 Usage:
-    python preprocessing/03_generate_prompts.py --input_dir ./preprocessing/chunked_mp3
+    python preprocessing/03_generate_prompts.py --input_dir ./data/psytrance/chunked_mp3
 """
 
 import argparse
@@ -81,7 +81,7 @@ def load_essentia():
 def load_clap():
     """Load LAION CLAP model."""
     import laion_clap
-    model = laion_clap.CLAP_Module(enable_fusion=False, amodel="HTSAT-base")
+    model = laion_clap.CLAP_Module(enable_fusion=False, amodel="HTSAT-tiny")
     model.load_ckpt()
     return model
 
@@ -122,7 +122,7 @@ def analyze_clap_batch(mp3_paths, clap_model, text_embeddings):
 
     # Compute cosine similarity
     audio_embeddings = torch.nn.functional.normalize(audio_embeddings, dim=-1)
-    similarities = (audio_embeddings @ text_embeddings.T).cpu().numpy()
+    similarities = (audio_embeddings @ text_embeddings.T).detach().cpu().numpy()
 
     results = []
     for i in range(len(mp3_paths)):
@@ -164,7 +164,7 @@ def write_empty_lyrics(mp3_path):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate trance prompts for MP3 chunks")
-    parser.add_argument("--input_dir", default="./preprocessing/chunked_mp3")
+    parser.add_argument("--input_dir", default="./data/psytrance/chunked_mp3")
     parser.add_argument("--clap_batch_size", type=int, default=16,
                         help="Batch size for CLAP inference")
     parser.add_argument("--skip_existing", action="store_true",

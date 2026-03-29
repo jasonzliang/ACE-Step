@@ -40,8 +40,8 @@ Rather than building yet another end-to-end text-to-music pipeline, our vision i
 - 🎮 2025.05.14: Add `Stable Audio Open Small` sampler `pingpong`. Use SDE to achieve better music consistency and quality, including lyric alignment and style alignment. Use a better method to re-implement `Audio2Audio`
 
 - 🎤 2025.05.12: Release [RapMachine](https://huggingface.co/ACE-Step/ACE-Step-v1-chinese-rap-LoRA) and fix lora training issues
-    - See [ZH_RAP_LORA.md](./ZH_RAP_LORA.md) for details. Audio Examples: https://ace-step.github.io/#RapMachine
-    - See [TRAIN_INSTRUCTION.md](./TRAIN_INSTRUCTION.md) for detailed training instructions.
+    - See [ZH_RAP_LORA.md](./docs/ZH_RAP_LORA.md) for details. Audio Examples: https://ace-step.github.io/#RapMachine
+    - See [TRAIN_INSTRUCTION.md](./docs/TRAIN_INSTRUCTION.md) for detailed training instructions.
 
 <p align="center">
     <img src="assets/rap_machine_demo.gif" alt="RapMachine Demo" width="45%">
@@ -359,7 +359,7 @@ The `examples/input_params` directory contains sample input parameters that can 
 </p>
 
 ## 🔨 Train
-See [TRAIN_INSTRUCTION.md](./TRAIN_INSTRUCTION.md) for detailed training instructions.
+See [TRAIN_INSTRUCTION.md](./docs/TRAIN_INSTRUCTION.md) for detailed training instructions.
 
 ## 📜 License & Disclaimer
 

@@ -61,7 +61,7 @@ I wonder if you'd come back
 Run the following command to convert your data to the training format:
 
 ```bash
-python convert2hf_dataset.py --data_dir "./data" --repeat_count 2000 --output_name "zh_lora_dataset"
+python preprocessing/convert2hf_dataset.py --data_dir "./data" --repeat_count 2000 --output_name "zh_lora_dataset"
 ```
 
 **Parameters:**

@@ -872,7 +872,7 @@ if __name__ == "__main__":
     args.add_argument("--epochs", type=int, default=-1)
     args.add_argument("--max_steps", type=int, default=2000000)
     args.add_argument("--every_n_train_steps", type=int, default=2000)
-    args.add_argument("--dataset_path", type=str, default="./zh_lora_dataset")
+    args.add_argument("--dataset_path", type=str, default="./data/zh_lora_dataset")
     args.add_argument("--exp_name", type=str, default="chinese_rap_lora")
     args.add_argument("--precision", type=str, default="32")
     args.add_argument("--accumulate_grad_batches", type=int, default=1)
