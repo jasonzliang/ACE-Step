@@ -202,3 +202,8 @@ pipeline_ace_step_demo.py
 *.wav
 start.sh
 exps/*
+
+.DS_Store
+*.tmp
+preprocessing/chunked_mp3
+preprocessing/raw_mp3
